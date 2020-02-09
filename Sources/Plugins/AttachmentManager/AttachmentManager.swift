@@ -31,6 +31,7 @@ open class AttachmentManager: NSObject, InputPlugin {
     
     public enum Attachment {
         case image(UIImage)
+        case video(UIImage, URL)
         case url(URL)
         case data(Data)
         
@@ -92,6 +93,12 @@ open class AttachmentManager: NSObject, InputPlugin {
         let attachment: Attachment
         if let image = object as? UIImage {
             attachment = .image(image)
+        } else if let video = object as? [URL: UIImage] {
+            if let pathURL = video.keys.first, let placeholderImg = video.values.first {
+                attachment = .video(placeholderImg, pathURL)
+            } else {
+                return false
+            }
         } else if let url = object as? URL {
             attachment = .url(url)
         } else if let data = object as? Data {
@@ -182,6 +189,17 @@ extension AttachmentManager: UICollectionViewDataSource, UICollectionViewDelegat
                 cell.indexPath = indexPath
                 cell.manager = self
                 cell.imageView.image = image
+                cell.imageView.tintColor = tintColor
+                cell.deleteButton.backgroundColor = tintColor
+                return cell
+            case .video(let placeholdImg, _):
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ImageAttachmentCell.reuseIdentifier, for: indexPath) as? ImageAttachmentCell else {
+                    fatalError()
+                }
+                cell.attachment = attachment
+                cell.indexPath = indexPath
+                cell.manager = self
+                cell.imageView.image = placeholdImg
                 cell.imageView.tintColor = tintColor
                 cell.deleteButton.backgroundColor = tintColor
                 return cell
